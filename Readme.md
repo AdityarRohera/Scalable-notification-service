@@ -28,28 +28,33 @@ node worker.js     # start worker
 ```json
 {
   "_id": {
-    "$oid": "69c8e873c6c1c332c5ae788a"
+    "$oid": "69c98073e6a92fc4078ac9b7"
   },
-  "userId": "e239560a-d369-4086-a01f-a916a0d8089e",
-  "type": "USER_SIGNUP",
-  "message": "Welcome Aditya to our notification system",
+  "client": "96ef8568-0f36-43b0-b32b-ae30d66e6839",
+  "recipient": {
+    "email": "aditya########@gmail.com",
+    "phone": "9999999999"
+  },
+  "type": "Sign-up",
+  "message": "This is Testing",
   "channel": "EMAIL",
   "status": "SENT",
   "metaData": {
-    "name": "Aditya",
-    "email": "aditya#######@gmail.com",
-    "title": "Welcome Mail"
+    "title": "New Mail"
   },
-  "notifyId": "cf47e02d-b6cc-4c81-b460-fb3dd3d10e31",
+  "attempts": 3,
+  "error": "I Will Send Email Later",
+  "notifyId": "82cee8df-202b-4f39-ac2c-f29a284accce",
   "createdAt": {
-    "$date": "2026-03-29T08:53:07.288Z"
+    "$date": "2026-03-29T19:41:39.095Z"
   },
   "updatedAt": {
-    "$date": "2026-03-29T08:53:19.893Z"
+    "$date": "2026-03-29T19:42:07.182Z"
   },
   "__v": 0,
+  "jobId": "8",
   "sentAt": {
-    "$date": "2026-03-29T08:53:19.893Z"
+    "$date": "2026-03-29T19:42:07.182Z"
   }
 }
 ```
