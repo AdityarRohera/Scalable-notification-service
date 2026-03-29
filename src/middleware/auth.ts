@@ -4,9 +4,12 @@ import mongoose from "mongoose";
 const secret = process.env.TOKEN_SECRET;
 import jwt from 'jsonwebtoken';
 import type {JwtPayload } from 'jsonwebtoken'
+import { getUser } from "../services/userService.js";
+import ClientModel from "../models/ClientModel.js";
 
 export interface AuthenticatedRequest extends Request {
         user : JwtPayload;
+        client : any;
 }
 
 export const userAuth = (req : Request , res : Response , next : Function) => {
@@ -54,3 +57,23 @@ export const userAuth = (req : Request , res : Response , next : Function) => {
             })
         }
    }
+
+export const authMiddleware = async (req : Request, res : Response , next : Function) => {
+
+  const clientReq = req as AuthenticatedRequest
+  const apiKey = req.headers["x-api-key"];
+
+  if (!apiKey) {
+    return res.status(401).json({ message: "API key required" });
+  }
+
+  const client = await ClientModel.findOne({ apiKey, isActive: true});
+
+  if (!client) {
+    return res.status(403).json({ message: "Invalid API key" });
+  }
+
+  clientReq.client = client; // attach client info
+
+  next();
+};

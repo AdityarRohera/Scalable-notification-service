@@ -4,8 +4,10 @@ import type { Request , Response } from 'express';
 import UserModel from '../models/UserModel.js';
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken';
-import { addNotificationJob } from '../queues/notification.queue.js';
+// import {createNotification } from '../queues/notification.queue.js';
 const secret = process.env.TOKEN_SECRET;
+import type { AuthenticatedRequest } from '../middleware/auth.js';
+import { getUser } from '../services/userService.js';
 
 // Signup controller
 export async function signup(req : Request, res : Response) {
@@ -25,20 +27,20 @@ export async function signup(req : Request, res : Response) {
     const user = await UserModel.create({ email, name, password: hashedPassword });
 
 
-    try{
-            // now send mail to user;
-          await addNotificationJob(
-            {
-              userId : user.id,
-              channel : 'EMAIL',
-              message : `Welcome ${user.name} to our notification system`,
-              metaData : {name : user.name || 'user' , email : user.email , title : `Welcome Mail`},
-              type : 'USER_SIGNUP'
-            }
-          )
-    } catch(err){
-      console.log("Error comes in send notification job" , err);
-    }
+    // try{
+    //         // now send mail to user;
+    //       await createNotification(
+    //         {
+    //           userId : user.id,
+    //           channel : 'EMAIL',
+    //           message : `Welcome ${user.name} to our notification system`,
+    //           metaData : {name : user.name || 'user' , email : user.email , title : `Welcome Mail`},
+    //           type : 'USER_SIGNUP'
+    //         }
+    //       )
+    // } catch(err){
+    //   console.log("Error comes in send notification job" , err);
+    // }
     
     
     return res.status(201).json({ message: 'User created successfully', user });
@@ -72,5 +74,24 @@ export async function login(req : Request, res : Response) {
     return res.status(200).json({ message: 'Login successful', user , token});
   } catch (error) {
     return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+export const getUserHandler = async(req : Request , res : Response) => {
+  try{
+          const AuthRequest = req as AuthenticatedRequest
+          const {userId} = AuthRequest.user
+          console.log("IsAdmin getting user id -> " , userId);
+
+          const user = getUser(userId);
+
+          return res.status(200).json({
+            success : false,
+            message : "Get user Successfully",
+            user : user
+          })
+
+  } catch(err){
+    return res.status(500).json({ error: 'Internal server error' , errMessage :err});
   }
 }

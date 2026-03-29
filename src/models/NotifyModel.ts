@@ -8,20 +8,28 @@ const notifySchema = new Schema(
     {
         notifyId : {
             type : String,
-            default: uuidv4,
+            default: () => uuidv4(),
             unique : true
         },
 
+        client: {
+            type: String,
+            ref: "clients",
+            required: true
+        },
 
-        userId: { 
-            type: String, 
-            required : true,
-            index: true
+        externalUserId: { 
+            type: String,
+        },
+
+        recipient : {
+             email: { type: String },
+             phone: { type: String },
+            //  deviceToken: { type: String }
         },
 
         type : {
             type : String,
-            enum: ['USER_SIGNUP', 'ORDER_PLACED', 'PAYMENT_SUCCESS'],
             required: true
         },
 
@@ -33,18 +41,33 @@ const notifySchema = new Schema(
         channel : {
             type : String,
             enum : ['EMAIL' , 'SMS' , 'IN_APP', 'PUSH'],
+            default : 'EMAIL',
             required : true
         },
 
         status: {
             type: String,
-            enum: ['PENDING', 'SENT', 'FAILED'],
-            default: 'PENDING',
+            enum: ['QUEUED', 'PROCESSING', 'SENT', 'FAILED'],
+            default: 'QUEUED',
             index: true
         },
 
         metaData : {
             type: Schema.Types.Mixed,
+            default : null
+        },
+
+        jobId : {
+            type : String,
+        },
+
+        attempts : {
+            type : Number,
+            default : 0
+        },
+
+        error : {
+            type : String,
             default : null
         },
 
@@ -58,5 +81,5 @@ const notifySchema = new Schema(
     }
 );
 
-const NotifyModel = mongoose.model("notify", notifySchema);
+const NotifyModel = mongoose.model("notifications", notifySchema);
 export default NotifyModel;

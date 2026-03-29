@@ -1,7 +1,6 @@
 
 
 // Implement worker for queue -> # Background processors
-import { v4 as uuidv4 } from 'uuid';
 
 import dbConnect from '../config/dbConnect.js';
 dbConnect();
@@ -13,33 +12,36 @@ import NotifyModel from '../models/NotifyModel.js';
 
 const worker = new Worker('notification-queue' , async(job : any) => {
 
+  const {channel , message , recipient , notificationId , metaData} = job.data;
+
   try{
-
-          const {userId , channel , message , metaData , type} = job.data;
-
 
 
         // first create notification 
-          const newNotification = await NotifyModel.create({
-            userId,
-            message,
-            channel,
-            metaData,
-            type,
-            status: 'PENDING'
-          });
-          console.log('📩 Notification saved:', newNotification);
+          // const newNotification = await NotifyModel.create({
+          //   recipient,
+          //   message,
+          //   channel,
+          //   metaData,
+          //   type,
+          //   status: 'QUEUED'
+          // });
+          // console.log('📩 Notification saved:', newNotification);
 
 
+          // First update job
+          await NotifyModel.findByIdAndUpdate(notificationId , {status : 'PROCESSING'})
 
-          try{
-
-                switch (job.data.channel) {
+                switch (channel) {
 
                     case 'EMAIL':
-                      await mailSender({email : metaData.email , title : metaData.title || 'Notification' , body : message , job});
-                      await NotifyModel.updateOne({_id : newNotification._id} , {$set : {status : 'SENT' ,  sentAt: new Date()}});
+                      await mailSender({email : recipient.email , title : metaData.title || 'Notification' , body : message , job});
+                      await NotifyModel.findByIdAndUpdate(
+                                                    notificationId,
+                                                    {status : 'SENT' ,  sentAt: new Date() , attempts : job.attemptsMade + 1}
+                                                  );
                       break;
+
 
                     case 'SMS':
                     console.log('📱 SMS logic pending');
@@ -49,17 +51,15 @@ const worker = new Worker('notification-queue' , async(job : any) => {
                     throw new Error(`Unsupported channel: ${job.data.channel}`);
                   }
 
-          } catch(err){
-              await NotifyModel.updateOne({_id : newNotification._id} , {$set : {status : 'FAILED' ,  sentAt: new Date()}});
-              throw err;
-          }
 
-
-  } catch(err){
+  } catch(err : any){
     console.log("Error comes in notification worker" , err);
-    throw err;
+    await NotifyModel.findByIdAndUpdate( notificationId,
+                                           {status : 'FAILED' ,  sentAt: new Date() ,  error: err.message , attempts: job.attemptsMade + 1}
+                                          );
+              throw err;
   }
-} , {connection : redisConnection})
+} , {connection : redisConnection , concurrency: 5})
 
 
 worker.on('active', (job) => {
